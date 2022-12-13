@@ -17,18 +17,18 @@ type ITask interface {
 type TaskHandle struct {
 	Container        map[string]ITask // 存放每个MsgId 所对应的处理方法的map属性
 	WorkerPoolSize   int              // 业务工作Worker池的数量
-	MaxWorkerTaskLen int              // 最大任务长度
+	TaskQueueBuffLen int              // 最大任务长度
 	TaskQueue        []chan IBody     // Worker负责取任务的消息队列
 	MsgId            int              // 消息id，每次投递递增
 }
 
-func NewTaskHandle(workPoolSize int, maxWorkerTaskLen int, taskPoolSize int) *TaskHandle {
+func NewTaskHandle(workSize int, queueBuffLen int) *TaskHandle {
 	return &TaskHandle{
 		Container:        make(map[string]ITask),
-		WorkerPoolSize:   workPoolSize,
-		MaxWorkerTaskLen: maxWorkerTaskLen,
+		WorkerPoolSize:   workSize,
+		TaskQueueBuffLen: queueBuffLen,
 		//一个worker对应一个queue
-		TaskQueue: make([]chan IBody, taskPoolSize),
+		TaskQueue: make([]chan IBody, workSize),
 	}
 }
 
@@ -91,7 +91,7 @@ func (mh *TaskHandle) StartWorkerPool() {
 	for i := 0; i < mh.WorkerPoolSize; i++ {
 		// 一个worker被启动
 		// 给当前worker对应的任务队列开辟空间
-		mh.TaskQueue[i] = make(chan IBody, mh.MaxWorkerTaskLen)
+		mh.TaskQueue[i] = make(chan IBody, mh.TaskQueueBuffLen)
 		// 启动当前Worker，阻塞的等待对应的任务队列是否有消息传递进来
 		go mh.StartOneWorker(i, mh.TaskQueue[i])
 	}
