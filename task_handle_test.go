@@ -29,7 +29,7 @@ func (d DemoTask) Execute(body IBody) {
 }
 
 func TestNewTaskHandle(t *testing.T) {
-	handle := NewTaskHandle(3, 200, 100)
+	handle := NewTaskHandle(3, 100)
 	handle.StartWorkerPool()
 	handle.AddTask(DemoTask{})
 
