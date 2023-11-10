@@ -41,6 +41,31 @@ func (mh *TaskHandle) SendToTaskQueue(body IBody) {
 	workerID := mh.MsgId % mh.WorkerPoolSize
 	//将请求消息发送给任务队列
 	mh.TaskQueue[workerID] <- body
+	mh.refreshMsgId()
+}
+
+// SendToTaskQueueP 将消息交给TaskQueue,由worker进行处理
+func (mh *TaskHandle) SendToTaskQueueP(body IBody, pools []int) {
+	// 根据ConnID来分配当前的连接应该由哪个worker负责处理
+	// 轮询的平均分配法则
+	index := mh.MsgId % len(pools)
+	//得到需要处理此条连接的workerID
+	workerID := pools[index]
+	//将请求消息发送给任务队列
+	mh.TaskQueue[workerID] <- body
+	mh.refreshMsgId()
+}
+
+// SendToTaskQueueN 将消息交给TaskQueue,由worker进行处理
+func (mh *TaskHandle) SendToTaskQueueN(body IBody, workerID int) {
+	if workerID >= mh.WorkerPoolSize {
+		return
+	}
+	mh.TaskQueue[workerID] <- body
+	mh.refreshMsgId()
+}
+
+func (mh *TaskHandle) refreshMsgId() {
 	if mh.MsgId > 1000000 {
 		mh.MsgId = 0
 	} else {
