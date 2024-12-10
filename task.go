@@ -1,8 +1,7 @@
 package gotask
 
 import (
-	"fmt"
-	"log"
+	logger "github.com/kordar/gologger"
 )
 
 type IBody interface {
@@ -15,6 +14,7 @@ type ITask interface {
 }
 
 type TaskHandle struct {
+	Name             string
 	Container        map[string]ITask // 存放每个MsgId 所对应的处理方法的map属性
 	WorkerPoolSize   int              // 业务工作Worker池的数量
 	TaskQueueBuffLen int              // 最大任务长度
@@ -23,12 +23,16 @@ type TaskHandle struct {
 }
 
 func NewTaskHandle(workSize int, queueBuffLen int) *TaskHandle {
+	return NewTaskHandleWithName("gotask", workSize, queueBuffLen)
+}
+
+func NewTaskHandleWithName(name string, workSize int, queueBuffLen int) *TaskHandle {
 	return &TaskHandle{
 		Container:        make(map[string]ITask),
 		WorkerPoolSize:   workSize,
 		TaskQueueBuffLen: queueBuffLen,
-		//一个worker对应一个queue
-		TaskQueue: make([]chan IBody, workSize),
+		Name:             name,
+		TaskQueue:        make([]chan IBody, workSize),
 	}
 }
 
@@ -82,14 +86,14 @@ func (mh *TaskHandle) AddTask(task ITask) {
 	}
 	// 2 添加msg与api的绑定关系
 	mh.Container[task.Id()] = task
-	log.Println("Add func taskId = ", taskId)
+	logger.Infof("[%s] the task named '%s' was added successfully.", mh.Name, taskId)
 }
 
 // DoMsgHandler 马上以非阻塞方式处理消息
 func (mh *TaskHandle) DoMsgHandler(body IBody) {
 	handler, ok := mh.Container[body.TaskId()]
 	if !ok {
-		fmt.Printf("task[%s] is not FOUND!\n", body.TaskId())
+		logger.Infof("[%s] no task named '%s' was found..", mh.Name, body.TaskId())
 		return
 	}
 
@@ -99,7 +103,7 @@ func (mh *TaskHandle) DoMsgHandler(body IBody) {
 
 // StartOneWorker 启动一个Worker工作流程
 func (mh *TaskHandle) StartOneWorker(workerID int, taskQueue chan IBody) {
-	log.Println("Worker ID = ", workerID, " is started.")
+	logger.Infof("[%s] worker with id %s is starting.", mh.Name, workerID)
 	// 不断的等待队列中的消息
 	for {
 		select {
