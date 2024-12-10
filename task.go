@@ -103,7 +103,7 @@ func (mh *TaskHandle) DoMsgHandler(body IBody) {
 
 // StartOneWorker 启动一个Worker工作流程
 func (mh *TaskHandle) StartOneWorker(workerID int, taskQueue chan IBody) {
-	logger.Infof("[%s] worker with id %s is starting.", mh.Name, workerID)
+	logger.Infof("[%s] WorkerID = %d is starting.", mh.Name, workerID)
 	// 不断的等待队列中的消息
 	for {
 		select {
